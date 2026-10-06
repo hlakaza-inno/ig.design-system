@@ -2,6 +2,7 @@ import { LitElement, html, css, nothing } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import { sharedStyles } from '../styles/shared.js';
 import { icon } from '../lib/icons.js';
+import logoUrl from '../assets/ig-logo.png';
 import { STATUS, allApproved, formatDate, validateFiles } from '../lib/rules.js';
 import { createDocs, createLinkExpiry, customer } from '../data/mock.js';
 import './cp-doc-card.js';
@@ -48,15 +49,9 @@ export class CpPortal extends LitElement {
         align-items: center;
         gap: var(--ig-space-3);
       }
-      .logo {
-        width: 40px; height: 40px; flex: none;
-        border-radius: var(--ig-radius-lg);
-        background: var(--ig-color-primary-500);
-        color: var(--ig-color-accent-500);
-        font-family: var(--ig-font-family-display);
-        font-weight: 700; font-size: var(--ig-text-lg);
-        display: grid; place-items: center;
-      }
+      .logo { height: 32px; width: auto; flex: none; display: block; }
+      .divider { width: 1px; align-self: stretch; background: var(--ig-color-neutral-200); flex: none; }
+      @media (max-width: 479px) { .secure span { display: none; } }
       .brand-title { font-weight: 600; color: var(--ig-color-primary-500); }
       .secure { margin-left: auto; display: inline-flex; align-items: center; gap: var(--ig-space-1); color: var(--ig-color-neutral-600); }
 
@@ -184,12 +179,13 @@ export class CpPortal extends LitElement {
     return html`
       <header class="brand">
         <div class="brand-inner">
-          <div class="logo" aria-hidden="true">IG</div>
+          <img class="logo" src=${logoUrl} width="125" height="32" alt="Innovation Group" />
+          <span class="divider" aria-hidden="true"></span>
           <div>
             <div class="brand-title body-lg">Document Upload</div>
             <div class="caption muted">Secure customer portal</div>
           </div>
-          <span class="secure caption">${icon('lock', 14)}Secure link</span>
+          <span class="secure caption">${icon('lock', 14)}<span>Secure link</span></span>
         </div>
       </header>`;
   }

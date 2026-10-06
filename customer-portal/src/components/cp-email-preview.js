@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { sharedStyles } from '../styles/shared.js';
 import { icon } from '../lib/icons.js';
+import logoUrl from '../assets/ig-logo.png';
 import { STATUS, formatDate } from '../lib/rules.js';
 import { SIGNED_LINK, createDocs, createLinkExpiry, customer } from '../data/mock.js';
 
@@ -21,8 +22,8 @@ export class CpEmailPreview extends LitElement {
       dl.meta dt { color: var(--ig-color-neutral-900); font-weight: 600; flex: none; min-width: 64px; }
       dl.meta dd { margin: 0; overflow-wrap: anywhere; }
       dl.meta .subject { color: var(--ig-color-neutral-900); font-weight: 600; }
-      .band { background: var(--ig-color-primary-500); color: #fff; padding: var(--ig-space-4) var(--ig-space-6); display: flex; align-items: center; gap: var(--ig-space-3); }
-      .logo { width: 36px; height: 36px; border-radius: var(--ig-radius-md); background: var(--ig-color-accent-500); color: var(--ig-color-primary-500); display: grid; place-items: center; font-family: var(--ig-font-family-display); font-weight: 700; }
+      .band { background: var(--ig-color-neutral-0); border-bottom: 3px solid var(--ig-color-primary-500); padding: var(--ig-space-4) var(--ig-space-6); }
+      .logo { height: 32px; width: auto; display: block; }
       .body { padding: var(--ig-space-6); display: flex; flex-direction: column; gap: var(--ig-space-4); color: var(--ig-color-neutral-800); }
       ul { margin: 0; padding-left: var(--ig-space-5); display: grid; gap: var(--ig-space-1); }
       .cta { align-self: flex-start; }
@@ -66,7 +67,7 @@ export class CpEmailPreview extends LitElement {
             <div><dt>To</dt><dd>${customer.email}</dd></div>
             <div><dt>Subject</dt><dd class="subject">Action needed: documents for your ${customer.process} request</dd></div>
           </dl>
-          <div class="band"><div class="logo" aria-hidden="true">IG</div><span class="heading-sm">Innovation Group</span></div>
+          <div class="band"><img class="logo" src=${logoUrl} width="125" height="32" alt="Innovation Group" /></div>
           <div class="body body-lg">
             <p>Dear ${customer.name.split(' ')[0]},</p>
             <p>To keep your <strong>${customer.process}</strong> request moving (reference <strong>${customer.reference}</strong>), we still need these documents from you:</p>
