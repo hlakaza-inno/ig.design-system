@@ -1,0 +1,114 @@
+/*
+ * Innovation Group Design System — CSS custom properties.
+ * Values mirror ig.design-system/src/tokens/*.ts (colors, typography, spacing,
+ * radius, elevation, motion). Do not add ad-hoc values here: change the
+ * design system first, then mirror it.
+ */
+:root {
+  /* Brand + primary (navy) */
+  --ig-color-primary-50: #eff5fd;
+  --ig-color-primary-100: #b3bad6;
+  --ig-color-primary-200: #8090ba;
+  --ig-color-primary-300: #4d669e;
+  --ig-color-primary-400: #264089;
+  --ig-color-primary-500: #001a72;
+  --ig-color-primary-600: #001766;
+  --ig-color-primary-700: #001355;
+  --ig-color-primary-800: #000f44;
+  --ig-color-primary-900: #000a2e;
+
+  /* Accent (cyan) — decorative / on dark only */
+  --ig-color-accent-50: #e6fcff;
+  --ig-color-accent-200: #80eeff;
+  --ig-color-accent-500: #00e6ff;
+  --ig-color-accent-700: #008a99;
+
+  /* Semantic */
+  --ig-color-error-50: #fef2f2;
+  --ig-color-error-200: #facaca;
+  --ig-color-error-500: #cf2e2e;
+  --ig-color-error-700: #911d1d;
+
+  --ig-color-warning-50: #fff8e1;
+  --ig-color-warning-500: #fcb900;
+  --ig-color-warning-700: #e65100;
+
+  --ig-color-success-50: #c8ffc8;
+  --ig-color-success-300: #50cc50;
+  --ig-color-success-500: #00aa00;
+  --ig-color-success-700: #006600;
+
+  /* Neutral */
+  --ig-color-neutral-0: #ffffff;
+  --ig-color-neutral-50: #f9fafb;
+  --ig-color-neutral-100: #f3f4f6;
+  --ig-color-neutral-200: #e5e7eb;
+  --ig-color-neutral-300: #d1d5db;
+  --ig-color-neutral-400: #9ca3af;
+  --ig-color-neutral-500: #6b7280;
+  --ig-color-neutral-600: #4b5563;
+  --ig-color-neutral-700: #384146;
+  --ig-color-neutral-800: #1f2937;
+  --ig-color-neutral-900: #111928;
+
+  /* Typography */
+  --ig-font-family-display: 'prota_proregular', 'Helvetica Neue', Arial, sans-serif;
+  --ig-font-family-body: 'neue-haas-unica', 'Helvetica Neue', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --ig-font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --ig-text-xs: 0.75rem;
+  --ig-text-sm: 0.875rem;
+  --ig-text-base: 1rem;
+  --ig-text-lg: 1.125rem;
+  --ig-text-xl: 1.25rem;
+  --ig-text-2xl: 1.5rem;
+  --ig-leading-xs: 1rem;
+  --ig-leading-sm: 1.25rem;
+  --ig-leading-base: 1.5rem;
+  --ig-leading-lg: 1.75rem;
+  --ig-leading-2xl: 2rem;
+
+  /* Spacing (8-point grid) */
+  --ig-space-0: 0;
+  --ig-space-1: 4px;
+  --ig-space-2: 8px;
+  --ig-space-3: 12px;
+  --ig-space-4: 16px;
+  --ig-space-5: 20px;
+  --ig-space-6: 24px;
+  --ig-space-8: 32px;
+  --ig-space-10: 40px;
+  --ig-space-12: 48px;
+  --ig-space-16: 64px;
+
+  /* Radius */
+  --ig-radius-sm: 4px;
+  --ig-radius-md: 6px;
+  --ig-radius-lg: 8px;
+  --ig-radius-xl: 12px;
+  --ig-radius-full: 9999px;
+
+  /* Elevation */
+  --ig-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --ig-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --ig-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+  --ig-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* Motion */
+  --ig-duration-fast: 100ms;
+  --ig-duration-normal: 200ms;
+  --ig-duration-slow: 300ms;
+  --ig-easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  line-height: 1.5;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ig-font-family-body);
+  color: var(--ig-color-neutral-900);
+  background: var(--ig-color-neutral-50);
+}
