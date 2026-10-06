@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Customer Document Portal — Signed-Link Upload (Prototype)</title>
+<style>
+  :root {
+    --ink: #1a2233; --muted: #6b7688; --border: #e1e5ea;
+    --accent: #1565c0; --accent-light: #e8f1fc;
+    --success: #2e7d32; --success-light: #e8f5e9;
+    --amber: #e65100; --amber-light: #fff3e0;
+    --danger: #c62828; --danger-light: #fdecea;
+    --grey-light: #f2f3f5; --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: #f5f6f8; color: var(--ink); }
+  .app { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .lead { margin: 0 0 18px; color: var(--muted); font-size: 13px; max-width: 760px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--amber-light); color: var(--amber); margin-left: 8px; vertical-align: middle; }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .tabs { display: flex; gap: 6px; }
+  .tab { border: 1px solid var(--border); background: #fff; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted); }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar label { font-size: 11.5px; font-weight: 700; color: var(--muted); }
+  select { padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: #fff; }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
+  .btn { border: none; border-radius: 8px; padding: 8px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #0f4f9e; }
+  .btn-ghost { background: #fff; color: var(--ink); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--grey-light); }
+  .btn-ok { background: var(--success); color: #fff; }
+  .btn-bad { background: var(--danger); color: #fff; }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+
+  .pane { display: none; }
+  .pane.visible { display: block; }
+  .layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  /* Email */
+  .email { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; }
+  .email-head { background: var(--grey-light); padding: 12px 16px; font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .email-head strong { color: var(--ink); }
+  .email-body { padding: 24px; font-size: 14px; line-height: 1.6; }
+  .email-body .cta { display: inline-block; background: var(--accent); color: #fff; padding: 11px 22px; border-radius: 8px; font-weight: 700; text-decoration: none; margin: 12px 0; cursor: pointer; }
+  .email-body ul { padding-left: 20px; }
+  .tokenbox { font-family: Consolas, monospace; font-size: 11px; background: var(--grey-light); border-radius: 6px; padding: 8px 10px; word-break: break-all; color: var(--muted); }
+
+  /* Portal */
+  .portal-shell { max-width: 640px; margin: 0 auto; }
+  .portal-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .logo { width: 34px; height: 34px; border-radius: 8px; background: var(--accent); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .portal-brand .t { font-size: 15px; font-weight: 700; }
+  .portal-brand .s { font-size: 11.5px; color: var(--muted); }
+  .ref-box { background: var(--accent-light); border-radius: 8px; padding: 12px 14px; font-size: 12.5px; margin-bottom: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
+  .ref-box .k { color: var(--muted); }
+  .ref-box .v { font-weight: 700; }
+  .progress { height: 8px; border-radius: 999px; background: var(--grey-light); overflow: hidden; margin: 6px 0 4px; }
+  .progress > div { height: 100%; background: var(--success); transition: width .3s; }
+  .progress-label { font-size: 11.5px; color: var(--muted); margin-bottom: 14px; }
+
+  .doc { border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; background: #fff; }
+  .doc.st-approved { border-color: #b7dfb9; background: #fafdfa; }
+  .doc.st-rejected { border-color: #f1b7b2; background: #fffafa; }
+  .doc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .doc-name { font-size: 14px; font-weight: 700; }
+  .doc-desc { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .pill { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .pill.requested { background: var(--grey-light); color: var(--muted); }
+  .pill.submitted { background: var(--accent-light); color: var(--accent); }
+  .pill.approved { background: var(--success-light); color: var(--success); }
+  .pill.rejected { background: var(--danger-light); color: var(--danger); }
+  .reject-box { background: var(--danger-light); border-left: 3px solid var(--danger); border-radius: 6px; padding: 8px 10px; font-size: 12px; margin-top: 10px; color: #7f1d1d; }
+  .file-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--grey-light); border-radius: 8px; padding: 8px 10px; margin-top: 10px; font-size: 12.5px; }
+  .file-row .meta { color: var(--muted); font-size: 11px; }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .drop { display: block; margin-top: 10px; border: 2px dashed var(--border); border-radius: 8px; padding: 14px; text-align: center; font-size: 12.5px; color: var(--muted); cursor: pointer; transition: background .15s, border-color .15s; }
+  .drop:hover, .drop.dragover { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+  .drop small { display: block; font-size: 10.5px; margin-top: 3px; }
+  .err { color: var(--danger); font-size: 11.5px; margin-top: 6px; }
+
+  .state-card { text-align: center; padding: 36px 20px; }
+  .state-card .icon { font-size: 40px; margin-bottom: 8px; }
+  .state-card h2 { margin: 0 0 6px; font-size: 18px; }
+  .state-card p { margin: 0 auto 14px; color: var(--muted); font-size: 13px; max-width: 420px; }
+
+  /* Agent table */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; color: var(--muted); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .3px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+
+  /* Side panel */
+  .side h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: var(--accent); margin: 0 0 8px; }
+  .side .block { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; font-size: 12px; line-height: 1.55; }
+  .side ul { margin: 0; padding-left: 18px; }
+  .log { max-height: 220px; overflow-y: auto; font-family: Consolas, monospace; font-size: 11px; color: var(--muted); }
+  .log div { padding: 2px 0; border-bottom: 1px dashed var(--border); }
+  .new-badge { display: inline-block; font-size: 10px; font-weight: 700; background: var(--success-light); color: var(--success); border-radius: 6px; padding: 2px 7px; margin-left: 6px; vertical-align: middle; }
+  .gap { background: var(--amber-light); border-left: 3px solid var(--amber); }
+
+  /* Modal */
+  .overlay { position: fixed; inset: 0; background: rgba(20,26,38,.5); display: none; align-items: center; justify-content: center; padding: 24px; }
+  .overlay.visible { display: flex; }
+  .modal { background: #fff; border-radius: var(--radius); width: 100%; max-width: 560px; padding: 22px; }
+  .modal h2 { margin: 0 0 4px; font-size: 16px; }
+  .preview { margin: 12px 0; height: 240px; background: var(--grey-light); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; text-align: center; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  footer.note-block { max-width: 1080px; margin: 20px auto 0; padding: 0 24px; font-size: 11.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Customer Document Portal <span class="badge">PROTOTYPE · SIGNED-LINK UPLOADER</span></h1>
+  <p class="lead">
+    Agents request documents for a business process exactly as today. The customer receives an email with a <strong>signed link</strong>,
+    lands on a standalone portal scoped to that one process instance, uploads by document type, and sees review outcomes
+    (approved / rejected + reason) in real time. Use the tabs to walk the full loop: <em>Email → Portal → Agent review → back to Portal</em>.
+  </p>
+
+  <div class="toolbar">
+    <div class="tabs">
+      <button class="tab active" data-tab="email">1 · Email</button>
+      <button class="tab" data-tab="portal">2 · Customer Portal</button>
+      <button class="tab" data-tab="agent">3 · Internal Agent Review</button>
+    </div>
+    <div class="spacer"></div>
+    <label for="scenario">Link scenario</label>
+    <select id="scenario">
+      <option value="valid">Valid link</option>
+      <option value="expired">Expired token</option>
+      <option value="tampered">Invalid / tampered signature</option>
+    </select>
+    <button class="btn btn-ghost" id="resetBtn">Reset demo</button>
+  </div>
+
+  <div class="layout">
+    <div>
+      <!-- 1. EMAIL -->
+      <div class="pane visible" id="pane-email">
+        <div class="card">
+          <div class="email">
+            <div class="email-head">
+              <div><strong>From:</strong> no-reply@oxy-insurance.example</div>
+              <div><strong>To:</strong> thandi.nkosi@example.com</div>
+              <div><strong>Subject:</strong> Action required: documents needed for your Transfer of Ownership request</div>
+            </div>
+            <div class="email-body">
+              <p>Dear Thandi,</p>
+              <p>To continue processing your <strong>Transfer of Ownership</strong> request (ref <strong>TOO-2026-004812</strong>), we need the following documents:</p>
+              <ul id="emailDocList"></ul>
+              <p>Use the secure link below to upload them. No login is required.</p>
+              <a class="cta" id="emailCta">Upload my documents</a>
+              <p style="font-size:12px;color:var(--muted)">This link is personal to you and expires on <strong id="emailExpiry"></strong>. Do not forward this email.</p>
+              <div class="tokenbox" id="tokenPreview"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. PORTAL -->
+      <div class="pane" id="pane-portal">
+        <div class="card">
+          <div class="portal-shell" id="portalRoot"></div>
+        </div>
+      </div>
+
+      <!-- 3. AGENT -->
+      <div class="pane" id="pane-agent">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div>
+              <strong style="font-size:15px">Documents · TOO-2026-004812</strong>
+              <div style="font-size:12px;color:var(--muted)">Existing <code>CustomerAdminDocumentUploadWrapper</code> experience — unchanged, now fed by the shared API.</div>
+            </div>
+            <button class="btn btn-primary" id="sendLinkBtn">Send / resend link</button>
+          </div>
+          <table>
+            <thead><tr><th>Document</th><th>Status</th><th>File</th><th>Submissions</th><th>Review</th></tr></thead>
+            <tbody id="agentBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side -->
+    <aside class="side">
+      <div class="block">
+        <h3>Flow rules</h3>
+        <ul>
+          <li>Token resolves to <strong>one process instance + one customer</strong>; nothing else is reachable.</li>
+          <li>Upload allowed when status is <em>Requested</em>, <em>Submitted</em> (replace) or <em>Rejected</em> (resubmit).</li>
+          <li>Approved documents are locked.</li>
+          <li>View / download works while the link is valid <strong>and</strong> not every document is approved.</li>
+          <li>Once all are approved the portal shows a completion screen; files are no longer exposed.</li>
+        </ul>
+      </div>
+      <div class="block gap">
+        <h3>Gaps vs. today <span class="new-badge">NEW</span></h3>
+        <ul>
+          <li><strong>Rejection reason is not persisted</strong> today (only a toast). Needs a column / lookup FK on the tracking record.</li>
+          <li>Signed token (process instance key + customer mapping id + expiry, HMAC / Data Protection), validated on every portal call; "resend" issues a new token.</li>
+          <li>Anonymous, rate-limited portal endpoints on the shared API.</li>
+          <li>"Send link" email through <code>SendPurchaseAgreementEmailAsync</code> with a <code>{{UploadLink}}</code> merge token.</li>
+        </ul>
+      </div>
+      <div class="block">
+        <h3>Event log</h3>
+        <div class="log" id="log"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<footer class="note-block">
+  Reference: <code>tracking.RequestedBusinessProcessInstanceDocument</code>, <code>RequestedBusinessProcessInstanceDocumentController</code>, <code>CustomerAdminDocumentUploadWrapper</code>.
+  All data is mocked in-page — discussion aid only. Nothing here is built.
+</footer>
+
+<!-- Preview modal -->
+<div class="overlay" id="previewOverlay">
+  <div class="modal">
+    <h2 id="pvTitle">Preview</h2>
+    <div style="font-size:12px;color:var(--muted)" id="pvMeta"></div>
+    <div class="preview" id="pvBody">Document preview (streamed from doc store via short-lived SAS / proxy)</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="pvDownload">Download</button>
+      <button class="btn btn-primary" id="pvClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const REJECTION_REASONS = ['Document is illegible', 'Document is expired', 'Wrong document type', 'Details do not match request'];
+const MAX_BYTES = 5 * 1024 * 1024;
+const ALLOWED = ['.pdf', '.jpg', '.jpeg', '.png'];
+
+const initialDocs = () => ([
+  { id: 1, name: 'Certified ID Copy',        desc: 'Certified within the last 3 months',          status: 'Requested', file: null, size: null, subs: 0, reason: null, error: null },
+  { id: 2, name: 'Proof of Address',         desc: 'Not older than 3 months',                      status: 'Submitted', file: 'utility-bill.pdf', size: 482000, subs: 1, reason: null, error: null },
+  { id: 3, name: 'Signed Transfer Form',     desc: 'Signed by both seller and buyer',              status: 'Rejected',  file: null, size: null, subs: 1, reason: 'Document is illegible', error: null },
+  { id: 4, name: 'Vehicle Registration (NaTIS)', desc: 'Latest registration certificate',          status: 'Approved',  file: 'natis.jpg', size: 910000, subs: 1, reason: null, error: null },
+]);
+
+let docs = initialDocs();
+let activeTab = 'email';
+let logLines = [];
+const linkExpiry = new Date(Date.now() + 7 * 864e5);
+
+const $ = (id) => document.getElementById(id);
+const fmtSize = (b) => b < 1048576 ? (b / 1024).toFixed(0) + ' KB' : (b / 1048576).toFixed(1) + ' MB';
+const fmtDate = (d) => d.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+const allApproved = () => docs.every(d => d.status === 'Approved');
+const scenario = () => $('scenario').value;
+
+function log(msg) {
+  logLines.unshift(`${new Date().toLocaleTimeString()}  ${msg}`);
+  $('log').innerHTML = logLines.map(l => `<div>${l}</div>`).join('');
+}
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('visible', p.id === 'pane-' + tab));
+  renderAll();
+}
+
+/* ---------- Email ---------- */
+function renderEmail() {
+  const pending = docs.filter(d => d.status !== 'Approved');
+  $('emailDocList').innerHTML = pending.map(d => `<li>${d.name}</li>`).join('') || '<li>(none outstanding)</li>';
+  $('emailExpiry').textContent = fmtDate(linkExpiry);
+  $('tokenPreview').textContent =
+    'https://portal.oxy.example/documents/upload?t=eyJwaSI6IjNmMmEuLi4iLCJlbSI6IjliN2MuLi4iLCJleHAiOjE3NTE...&sig=Qm9ldGllLXNpZ25hdHVyZQ';
+}
+$('emailCta').addEventListener('click', () => { log('Customer clicked email link'); switchTab('portal'); });
+
+/* ---------- Portal ---------- */
+function renderPortal() {
+  const root = $('portalRoot');
+  const brand = `<div class="portal-brand"><div class="logo">O</div><div><div class="t">Document Upload</div><div class="s">Secure customer portal</div></div></div>`;
+
+  if (scenario() === 'expired') {
+    root.innerHTML = brand + `<div class="state-card"><div class="icon">⏱️</div><h2>This link has expired</h2>
+      <p>For your security, upload links are only valid for a limited time. Request a new link and we will email it to the address on file.</p>
+      <button class="btn btn-primary" onclick="requestNewLink()">Email me a new link</button></div>`;
+    return;
+  }
+  if (scenario() === 'tampered') {
+    root.innerHTML = brand + `<div class="state-card"><div class="icon">🚫</div><h2>This link is not valid</h2>
+      <p>The link could not be verified. Please use the link exactly as it appears in your email, or contact support.</p></div>`;
+    return;
+  }
+  if (allApproved()) {
+    root.innerHTML = brand + `<div class="state-card"><div class="icon">✅</div><h2>All documents approved</h2>
+      <p>Thank you — everything we requested has been received and approved. You do not need to do anything further.</p></div>`;
+    return;
+  }
+
+  const approved = docs.filter(d => d.status === 'Approved').length;
+  const pct = Math.round(approved / docs.length * 100);
+  const rejected = docs.filter(d => d.status === 'Rejected').length;
+
+  root.innerHTML = brand + `
+    <div class="ref-box">
+      <div><span class="k">Request</span><br><span class="v">Transfer of Ownership</span></div>
+      <div><span class="k">Reference</span><br><span class="v">TOO-2026-004812</span></div>
+      <div><span class="k">Customer</span><br><span class="v">Thandi Nkosi</span></div>
+      <div><span class="k">Link expires</span><br><span class="v">${fmtDate(linkExpiry)}</span></div>
+    </div>
+    ${rejected ? `<div class="reject-box" style="margin:0 0 14px">${rejected} document${rejected > 1 ? 's were' : ' was'} rejected — please review the reason and upload again.</div>` : ''}
+    <div class="progress"><div style="width:${pct}%"></div></div>
+    <div class="progress-label">${approved} of ${docs.length} documents approved</div>
+    ${docs.map(portalDocHtml).join('')}`;
+}
+
+function portalDocHtml(d) {
+  const st = d.status.toLowerCase();
+  const locked = d.status === 'Approved';
+  const hasFile = !!d.file && d.status !== 'Rejected';
+  const uploadLabel = d.status === 'Submitted' ? 'Replace file' : d.status === 'Rejected' ? 'Upload a new file' : 'Choose file';
+  return `
+  <div class="doc st-${st}">
+    <div class="doc-top">
+      <div><div class="doc-name">${d.name}</div><div class="doc-desc">${d.desc}</div></div>
+      <span class="pill ${st}">${d.status}</span>
+    </div>
+    ${d.status === 'Rejected' && d.reason ? `<div class="reject-box"><strong>Rejected:</strong> ${d.reason}</div>` : ''}
+    ${hasFile ? `<div class="file-row">
+        <div>📄 ${d.file}<div class="meta">${fmtSize(d.size)} · submission #${d.subs}</div></div>
+        <div class="actions">
+          <button class="btn btn-ghost" onclick="openPreview(${d.id})">View</button>
+          <button class="btn btn-ghost" onclick="download(${d.id})">Download</button>
+        </div></div>` : ''}
+    ${locked ? '<div class="doc-desc" style="margin-top:8px">Approved — no further action needed.</div>' : `
+      <label class="drop" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, ${d.id})">
+        ${uploadLabel} or drop it here<small>PDF, JPG or PNG · max 5 MB</small>
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" hidden onchange="onFile(${d.id}, this.files[0])" />
+      </label>`}
+    ${d.error ? `<div class="err">${d.error}</div>` : ''}
+  </div>`;
+}
+
+function onDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
+function onDragLeave(e) { e.currentTarget.classList.remove('dragover'); }
+function onDrop(e, id) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  if (files.length > 1) {
+    const d = docs.find(x => x.id === id);
+    d.error = 'Please drop a single file.';
+    renderAll();
+    return;
+  }
+  onFile(id, files[0]);
+}
+
+function onFile(id, f) {
+  const d = docs.find(x => x.id === id);
+  if (!f) return;
+  const ext = '.' + f.name.split('.').pop().toLowerCase();
+  d.error = null;
+  if (!ALLOWED.includes(ext)) d.error = `'${ext}' is not allowed. Accepted types: PDF, JPG, PNG.`;
+  else if (f.size > MAX_BYTES) d.error = `File exceeds the 5 MB limit (${fmtSize(f.size)}).`;
+  if (d.error) { renderAll(); return; }
+  if (d.status === 'Approved') return;
+  const replaced = d.status === 'Submitted';
+  d.file = f.name; d.size = f.size; d.subs += 1; d.status = 'Submitted'; d.reason = null;
+  log(`Customer ${replaced ? 'replaced' : 'uploaded'} "${d.name}" (${f.name}) → status Received`);
+  renderAll();
+}
+
+function requestNewLink() { log('Customer requested a new link — new token emailed'); alert('Prototype: a fresh link would be emailed to the address on file.'); }
+
+/* ---------- Preview / download ---------- */
+let previewId = null;
+function openPreview(id) {
+  const d = docs.find(x => x.id === id);
+  if (allApproved()) return;
+  previewId = id;
+  $('pvTitle').textContent = d.name;
+  $('pvMeta').textContent = `${d.file} · ${fmtSize(d.size)}`;
+  $('previewOverlay').classList.add('visible');
+  log(`Customer viewed "${d.name}"`);
+}
+$('pvClose').addEventListener('click', () => $('previewOverlay').classList.remove('visible'));
+$('pvDownload').addEventListener('click', () => { const d = docs.find(x => x.id === previewId); if (d) download(d.id); });
+function download(id) {
+  const d = docs.find(x => x.id === id);
+  log(`Customer downloaded "${d.name}" (${d.file})`);
+  alert(`Prototype: would stream "${d.file}" from the document store through the portal API.`);
+}
+
+/* ---------- Agent view ---------- */
+function renderAgent() {
+  $('agentBody').innerHTML = docs.map(d => {
+    const st = d.status.toLowerCase();
+    const canReview = d.status === 'Submitted';
+    return `<tr>
+      <td><strong>${d.name}</strong></td>
+      <td><span class="pill ${st}">${d.status}</span>${d.reason ? `<div style="font-size:11px;color:var(--danger);margin-top:3px">${d.reason}</div>` : ''}</td>
+      <td>${d.file && d.status !== 'Rejected' ? d.file : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${d.subs}</td>
+      <td>
+        ${canReview ? `<div class="actions">
+          <button class="btn btn-ok" onclick="agentApprove(${d.id})">Approve</button>
+          <select id="rr-${d.id}">${REJECTION_REASONS.map(r => `<option>${r}</option>`).join('')}</select>
+          <button class="btn btn-bad" onclick="agentReject(${d.id})">Reject</button></div>`
+          : '<span style="color:var(--muted);font-size:12px">' + (d.status === 'Approved' ? 'Verified' : 'Awaiting customer') + '</span>'}
+      </td></tr>`;
+  }).join('');
+}
+function agentApprove(id) {
+  const d = docs.find(x => x.id === id);
+  d.status = 'Approved'; d.reason = null;
+  log(`Agent approved "${d.name}" → status Verified`);
+  if (allApproved()) log('All documents approved → process continues; portal locks');
+  renderAll();
+}
+function agentReject(id) {
+  const d = docs.find(x => x.id === id);
+  d.status = 'Rejected'; d.reason = $('rr-' + id).value; d.file = null; d.size = null;
+  log(`Agent rejected "${d.name}" (${d.reason}) → customer notified`);
+  renderAll();
+}
+$('sendLinkBtn').addEventListener('click', () => { log('Agent sent link email (new signed token issued)'); switchTab('email'); });
+
+/* ---------- Wiring ---------- */
+$('scenario').addEventListener('change', () => { log('Scenario: ' + scenario()); renderAll(); });
+$('resetBtn').addEventListener('click', () => { docs = initialDocs(); logLines = []; $('scenario').value = 'valid'; log('Demo reset'); switchTab('email'); });
+
+function renderAll() { renderEmail(); renderPortal(); renderAgent(); }
+renderAll();
+log('Demo ready');
+</script>
+</body>
+</html>
