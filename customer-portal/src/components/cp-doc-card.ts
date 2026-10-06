@@ -1,14 +1,16 @@
 import { LitElement, html, css, nothing } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
+import type { DocIdDetail, DocStatus, DocumentItem, FilesSelectedDetail } from '../lib/types.js';
 import { sharedStyles } from '../styles/shared.js';
-import { icon } from '../lib/icons.js';
+import { icon, type IconName } from '../lib/icons.js';
 import { ACCEPT_ATTR, STATUS, canUpload, formatSize, hasVisibleFile } from '../lib/rules.js';
 import './cp-progress-bar.js';
 
-const UPLOAD_LABEL = {
+const UPLOAD_LABEL: Partial<Record<DocStatus, string>> = {
   [STATUS.REQUESTED]: 'Choose a file',
   [STATUS.REJECTED]: 'Upload a new file',
 };
-const PILL_ICON = {
+const PILL_ICON: Record<DocStatus, IconName> = {
   [STATUS.REQUESTED]: 'clock',
   [STATUS.SUBMITTED]: 'upload',
   [STATUS.APPROVED]: 'check-circle',
@@ -26,15 +28,17 @@ const PILL_ICON = {
  *         readonly        hides upload and file actions (e.g. link no longer valid)
  * Events: files-selected { id, files }, view-file { id }, download-file { id }
  */
+@customElement('cp-doc-card')
 export class CpDocCard extends LitElement {
-  static properties = {
-    doc: { type: Object },
-    error: { type: String },
-    uploadProgress: { type: Number, attribute: 'upload-progress' },
-    uploadingName: { type: String, attribute: 'uploading-name' },
-    readonly: { type: Boolean },
-    _dragging: { state: true },
-  };
+  @property({ type: Object }) doc: DocumentItem | null = null;
+  /** Inline validation message. */
+  @property() error: string | null = null;
+  /** 0–100 while an upload is in flight, otherwise null. */
+  @property({ type: Number, attribute: 'upload-progress' }) uploadProgress: number | null = null;
+  @property({ attribute: 'uploading-name' }) uploadingName = '';
+  /** Hides upload and file actions (e.g. link no longer valid). */
+  @property({ type: Boolean }) readonly = false;
+  @state() private _dragging = false;
 
   static styles = [
     sharedStyles,
@@ -135,69 +139,65 @@ export class CpDocCard extends LitElement {
     `,
   ];
 
-  constructor() {
-    super();
-    this.doc = null;
-    this.error = null;
-    this.uploadProgress = null;
-    this.uploadingName = '';
-    this.readonly = false;
-    this._dragging = false;
-  }
-
-  get _uploading() {
+  private get _uploading(): boolean {
     return this.uploadProgress != null;
   }
 
-  _emit(name, detail) {
+  private _emit(name: 'files-selected', detail: FilesSelectedDetail): void;
+  private _emit(name: 'view-file' | 'download-file', detail: DocIdDetail): void;
+  private _emit(name: string, detail: FilesSelectedDetail | DocIdDetail): void {
     this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
   }
 
-  _browse() {
-    this.renderRoot.querySelector('input[type=file]').click();
+  private _browse(): void {
+    this.renderRoot.querySelector<HTMLInputElement>('input[type=file]')?.click();
   }
 
-  _onPick(e) {
-    const files = [...e.target.files];
-    e.target.value = ''; // allow picking the same file again
-    if (files.length) this._emit('files-selected', { id: this.doc.id, files });
+  private _selectFiles(files: File[]): void {
+    if (files.length && this.doc) this._emit('files-selected', { id: this.doc.id, files });
   }
 
-  get _canDrop() {
-    return canUpload(this.doc.status) && !this.readonly && !this._uploading;
+  private _onPick(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    const files = [...(input.files ?? [])];
+    input.value = ''; // allow picking the same file again
+    this._selectFiles(files);
   }
 
-  _onDragOver(e) {
+  private get _canDrop(): boolean {
+    return !!this.doc && canUpload(this.doc.status) && !this.readonly && !this._uploading;
+  }
+
+  private _onDragOver(e: DragEvent): void {
     if (!this._canDrop) return;
     e.preventDefault();
     this._dragging = true;
   }
 
-  _onDragLeave(e) {
-    if (!e.currentTarget.contains(e.relatedTarget)) this._dragging = false;
+  private _onDragLeave(e: DragEvent): void {
+    if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node | null)) this._dragging = false;
   }
 
-  _onDrop(e) {
+  private _onDrop(e: DragEvent): void {
     if (!this._canDrop) return;
     e.preventDefault();
     this._dragging = false;
-    const files = [...e.dataTransfer.files];
-    if (files.length) this._emit('files-selected', { id: this.doc.id, files });
+    this._selectFiles([...(e.dataTransfer?.files ?? [])]);
   }
 
-  _pill(status) {
+  private _pill(status: DocStatus) {
     return html`<span class="pill pill-${status.toLowerCase()}">${icon(PILL_ICON[status], 16)}${status}</span>`;
   }
 
   /** Content: the document itself (or an empty placeholder). No actions here. */
-  _fileInfo(d, hasFile) {
+  private _fileInfo(d: DocumentItem, hasFile: boolean) {
     return hasFile
       ? html`
           <div class="file">
             <div class="tile">${icon('file', 30)}</div>
             <div class="file-text">
               <div class="file-name" title=${d.fileName}>${d.fileName}</div>
-              <div class="file-meta body-md">${formatSize(d.fileSize)} · Submission ${d.submissions}</div>
+              <div class="file-meta body-md">${formatSize(d.fileSize ?? 0)} · Submission ${d.submissions}</div>
             </div>
           </div>`
       : html`
@@ -211,7 +211,7 @@ export class CpDocCard extends LitElement {
   }
 
   /** Footer: always the actions. */
-  _footer(d, hasFile) {
+  private _footer(d: DocumentItem, hasFile: boolean) {
     if (this.readonly) return nothing;
     if (hasFile) {
       const canReplace = d.status === STATUS.SUBMITTED && !this._uploading;
@@ -284,4 +284,8 @@ export class CpDocCard extends LitElement {
       </article>`;
   }
 }
-customElements.define('cp-doc-card', CpDocCard);
+declare global {
+  interface HTMLElementTagNameMap {
+    'cp-doc-card': CpDocCard;
+  }
+}

@@ -1,10 +1,12 @@
-import { LitElement, html, css, nothing } from 'lit';
+import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
+import type { DocumentItem, DocIdDetail, FilesSelectedDetail, LoadPhase, PortalData, PortalResponse } from '../lib/types.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { sharedStyles } from '../styles/shared.js';
 import { icon } from '../lib/icons.js';
-import logoUrl from '../assets/ig-logo.png';
 import { STATUS, allApproved, formatDate, validateFiles } from '../lib/rules.js';
-import { createDocs, createLinkExpiry, customer } from '../data/mock.js';
+import './cp-brand-header.js';
+import './cp-loading.js';
 import './cp-doc-card.js';
 import './cp-progress-bar.js';
 import './cp-state-screen.js';
@@ -14,56 +16,34 @@ const UPLOAD_MS = 900;
 
 /** Most urgent first: rejected → requested → submitted (awaiting review) → approved. */
 const PRIORITY = [STATUS.REJECTED, STATUS.REQUESTED, STATUS.SUBMITTED, STATUS.APPROVED];
-const byPriority = (docs) =>
+const byPriority = (docs: DocumentItem[]): DocumentItem[] =>
   [...docs].sort((a, b) => PRIORITY.indexOf(a.status) - PRIORITY.indexOf(b.status)); // stable sort
 
 /**
  * Step 2 — Customer Portal.
- * Props: scenario 'valid' | 'expired' | 'tampered'
+ * Props: phase     'loading' | 'error' | 'ready'
+ *        response  what the (mocked) API answered for the link
  * State: documents, per-document errors and in-flight uploads live here (no globals).
  * Public: approveAll() — demo helper that stands in for the (out-of-scope) agent review.
  */
+@customElement('cp-portal')
 export class CpPortal extends LitElement {
-  static properties = {
-    scenario: { type: String },
-    _docs: { state: true },
-    _errors: { state: true },
-    _uploads: { state: true }, // { [id]: { progress, name } }
-    _previewId: { state: true },
-    _announce: { state: true },
-  };
+  @property() phase: LoadPhase = 'loading';
+  @property({ attribute: false }) response: PortalResponse | null = null;
+  @state() private _docs: DocumentItem[] = [];
+  @state() private _errors: Record<number, string | null> = {};
+  @state() private _uploads: Record<number, { progress: number; name: string }> = {};
+  @state() private _previewId: number | null = null;
+  @state() private _announce = '';
+  private readonly _timers = new Map<number, ReturnType<typeof setInterval>>();
 
   static styles = [
     sharedStyles,
     css`
       :host { display: block; min-height: 100%; }
-      header.brand {
-        background: var(--ig-color-neutral-0);
-        border-bottom: 1px solid var(--ig-color-neutral-200);
-      }
-      .brand-inner {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: var(--ig-space-3) var(--ig-space-4);
-        display: flex;
-        align-items: center;
-        gap: var(--ig-space-3);
-      }
-      .logo { height: 32px; width: auto; flex: none; display: block; }
-      .divider { width: 1px; align-self: stretch; background: var(--ig-color-neutral-200); flex: none; }
-      @media (max-width: 479px) { .secure span { display: none; } }
-      .brand-title { font-weight: 600; color: var(--ig-color-primary-500); }
-      .secure { margin-left: auto; display: inline-flex; align-items: center; gap: var(--ig-space-1); color: var(--ig-color-neutral-600); }
-
-      .brand-inner, main { max-width: 1200px; margin: 0 auto; }
-      main { padding: var(--ig-space-4) var(--ig-space-4) var(--ig-space-16); }
-      @media (min-width: 640px) {
-        .brand-inner, main { padding-left: var(--ig-space-6); padding-right: var(--ig-space-6); }
-        main { padding-top: var(--ig-space-6); }
-      }
-      @media (min-width: 1024px) {
-        .brand-inner, main { padding-left: var(--ig-space-8); padding-right: var(--ig-space-8); }
-      }
+      main { max-width: 1200px; margin: 0 auto; padding: var(--ig-space-4) var(--ig-space-4) var(--ig-space-16); }
+      @media (min-width: 640px) { main { padding: var(--ig-space-6) var(--ig-space-6) var(--ig-space-16); } }
+      @media (min-width: 1024px) { main { padding-left: var(--ig-space-8); padding-right: var(--ig-space-8); } }
 
       main { display: flex; flex-direction: column; gap: var(--ig-space-4); }
       .state-wrap { max-width: 640px; width: 100%; margin: var(--ig-space-6) auto 0; }
@@ -94,47 +74,50 @@ export class CpPortal extends LitElement {
     `,
   ];
 
-  constructor() {
-    super();
-    this.scenario = 'valid';
-    this._docs = createDocs();
+  /** A fresh API response (re)initialises the working copy of the documents. */
+  protected willUpdate(changed: PropertyValues<this>): void {
+    if (!changed.has('response')) return;
+    this._clearSession();
+    this._docs = this.response?.status === 'valid' ? this.response.data.documents.map((d) => ({ ...d })) : [];
+  }
+
+  private _clearSession(): void {
+    this._timers.forEach((t) => clearInterval(t));
+    this._timers.clear();
+    this._docs.forEach((d) => d.blobUrl && URL.revokeObjectURL(d.blobUrl));
     this._errors = {};
     this._uploads = {};
     this._previewId = null;
     this._announce = '';
-    this._expiry = createLinkExpiry();
-    this._timers = new Map();
   }
 
-  disconnectedCallback() {
+  disconnectedCallback(): void {
     super.disconnectedCallback();
-    this._timers.forEach((t) => clearInterval(t));
-    this._timers.clear();
-    this._docs.forEach((d) => d.blobUrl && URL.revokeObjectURL(d.blobUrl));
+    this._clearSession();
   }
 
   /** Demo helper standing in for the agent review screen. */
-  approveAll() {
+  approveAll(): void {
     this._previewId = null;
     this._docs = this._docs.map((d) => ({ ...d, status: STATUS.APPROVED, rejectionReason: null }));
   }
 
-  get _linkValid() {
-    return this.scenario === 'valid';
+  private get _linkValid(): boolean {
+    return this.response?.status === 'valid';
   }
 
-  _patchDoc(id, patch) {
+  private _patchDoc(id: number, patch: Partial<DocumentItem>): void {
     this._docs = this._docs.map((d) => (d.id === id ? { ...d, ...patch } : d));
   }
 
-  _setError(id, message) {
+  private _setError(id: number, message: string | null): void {
     this._errors = { ...this._errors, [id]: message };
   }
 
-  _onFilesSelected({ detail: { id, files } }) {
+  private _onFilesSelected({ detail: { id, files } }: CustomEvent<FilesSelectedDetail>): void {
     const doc = this._docs.find((d) => d.id === id);
     // Business rules: link must be valid, doc not locked, one upload at a time per document.
-    if (!this._linkValid || doc.status === STATUS.APPROVED || this._uploads[id]) return;
+    if (!doc || !this._linkValid || doc.status === STATUS.APPROVED || this._uploads[id]) return;
 
     const error = validateFiles(files);
     this._setError(id, error);
@@ -142,7 +125,7 @@ export class CpPortal extends LitElement {
     this._startUpload(doc, files[0]);
   }
 
-  _startUpload(doc, file) {
+  private _startUpload(doc: DocumentItem, file: File): void {
     const { id } = doc;
     this._uploads = { ...this._uploads, [id]: { progress: 0, name: file.name } };
     const step = 100 / (UPLOAD_MS / 90);
@@ -158,8 +141,9 @@ export class CpPortal extends LitElement {
     this._timers.set(id, timer);
   }
 
-  _finishUpload(id, file) {
+  private _finishUpload(id: number, file: File): void {
     const prev = this._docs.find((d) => d.id === id);
+    if (!prev) return;
     if (prev.blobUrl) URL.revokeObjectURL(prev.blobUrl); // single file per document type
     this._patchDoc(id, {
       status: STATUS.SUBMITTED,
@@ -175,11 +159,11 @@ export class CpPortal extends LitElement {
     this._announce = `${file.name} uploaded for ${prev.name}.`;
   }
 
-  _onView({ detail: { id } }) {
+  private _onView({ detail: { id } }: CustomEvent<DocIdDetail>): void {
     if (this._linkValid && !allApproved(this._docs)) this._previewId = id;
   }
 
-  _onDownload({ detail: { id } }) {
+  private _onDownload({ detail: { id } }: CustomEvent<DocIdDetail>): void {
     const d = this._docs.find((x) => x.id === id);
     if (!this._linkValid || !d?.fileName || allApproved(this._docs)) return;
     // Mocked backend: real session uploads download as-is; seeded files get a stand-in text file.
@@ -189,36 +173,21 @@ export class CpPortal extends LitElement {
     if (!d.blobUrl) setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  _brand() {
-    return html`
-      <header class="brand">
-        <div class="brand-inner">
-          <img class="logo" src=${logoUrl} width="125" height="32" alt="Innovation Group" />
-          <span class="divider" aria-hidden="true"></span>
-          <div>
-            <div class="brand-title body-lg">Document Upload</div>
-            <div class="caption muted">Secure customer portal</div>
-          </div>
-          <span class="secure caption">${icon('lock', 14)}<span>Secure link</span></span>
-        </div>
-      </header>`;
-  }
-
-  _active() {
+  private _active(data: PortalData) {
     const total = this._docs.length;
     const approved = this._docs.filter((d) => d.status === STATUS.APPROVED).length;
     const rejected = this._docs.filter((d) => d.status === STATUS.REJECTED).length;
     return html`
       <div class="intro">
         <h1>Upload your documents</h1>
-        <p class="body-lg">Hi ${customer.name.split(' ')[0]}, we need a few documents to continue your request.</p>
+        <p class="body-lg">Hi ${data.customer.name.split(' ')[0]}, we need a few documents to continue your request.</p>
       </div>
 
       <dl class="ref body-md" aria-label="Request details">
-        <div><dt>Request</dt><dd>${customer.process}</dd></div>
-        <div><dt>Reference</dt><dd>${customer.reference}</dd></div>
-        <div><dt>Customer</dt><dd>${customer.name}</dd></div>
-        <div><dt>Link expires</dt><dd>${formatDate(this._expiry)}</dd></div>
+        <div><dt>Request</dt><dd>${data.request.process}</dd></div>
+        <div><dt>Reference</dt><dd>${data.request.reference}</dd></div>
+        <div><dt>Customer</dt><dd>${data.customer.name}</dd></div>
+        <div><dt>Link expires</dt><dd>${formatDate(data.link.expiresAt)}</dd></div>
       </dl>
 
       ${rejected
@@ -250,21 +219,38 @@ export class CpPortal extends LitElement {
       <footer class="help body-md">Accepted: PDF, JPG or PNG, up to 5 MB each. One file per document.</footer>`;
   }
 
-  render() {
-    let body;
-    if (this.scenario === 'expired') body = html`<div class="state-wrap"><div class="card state-card"><cp-state-screen variant="expired"></cp-state-screen></div></div>`;
-    else if (this.scenario === 'tampered') body = html`<div class="state-wrap"><div class="card state-card"><cp-state-screen variant="tampered"></cp-state-screen></div></div>`;
-    else if (allApproved(this._docs)) body = html`<div class="state-wrap"><div class="card state-card"><cp-state-screen variant="complete"></cp-state-screen></div></div>`;
-    else body = this._active();
+  private _stateCard(variant: 'expired' | 'tampered' | 'complete' | 'error') {
+    const r = this.response;
+    return html`<div class="state-wrap"><div class="card state-card">
+      <cp-state-screen variant=${variant}
+        .maskedEmail=${r?.status === 'expired' ? r.maskedEmail : ''}
+        .support=${r && r.status !== 'valid' ? r.support : null}
+        .customerName=${r?.status === 'valid' ? r.data.customer.name : ''}></cp-state-screen>
+    </div></div>`;
+  }
 
+  private _body() {
+    if (this.phase === 'loading') return html`<cp-loading layout="portal"></cp-loading>`;
+    const r = this.response;
+    if (this.phase === 'error' || !r) return this._stateCard('error');
+    if (r.status === 'expired') return this._stateCard('expired');
+    if (r.status === 'tampered') return this._stateCard('tampered');
+    return allApproved(this._docs) ? this._stateCard('complete') : this._active(r.data);
+  }
+
+  render() {
     const previewDoc = this._docs.find((d) => d.id === this._previewId) ?? null;
     return html`
-      ${this._brand()}
-      <main>${body}</main>
+      <cp-brand-header></cp-brand-header>
+      <main>${this._body()}</main>
       <div class="sr-only" role="status" aria-live="polite">${this._announce}</div>
       <cp-preview-modal .open=${!!previewDoc && this._linkValid} .doc=${previewDoc}
         @close-preview=${() => (this._previewId = null)}
         @download-file=${this._onDownload}></cp-preview-modal>`;
   }
 }
-customElements.define('cp-portal', CpPortal);
+declare global {
+  interface HTMLElementTagNameMap {
+    'cp-portal': CpPortal;
+  }
+}

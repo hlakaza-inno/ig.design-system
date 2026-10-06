@@ -1,15 +1,23 @@
 import { LitElement, html, css } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import type { LoadPhase, PortalData } from '../lib/types.js';
 import { sharedStyles } from '../styles/shared.js';
 import { icon } from '../lib/icons.js';
 import logoUrl from '../assets/ig-logo.png';
 import { STATUS, formatDate } from '../lib/rules.js';
-import { SIGNED_LINK, createDocs, createLinkExpiry, customer } from '../data/mock.js';
+import './cp-loading.js';
+import './cp-state-screen.js';
 
 /**
  * Step 1 — example email showing how the customer reaches the portal.
- * Events: open-portal (CTA clicked)
+ * Props:  phase 'loading' | 'error' | 'ready', data (the valid-link payload)
+ * Events: open-portal (CTA clicked), retry (from the error screen)
  */
+@customElement('cp-email-preview')
 export class CpEmailPreview extends LitElement {
+  @property() phase: LoadPhase = 'loading';
+  @property({ attribute: false }) data: PortalData | null = null;
+
   static styles = [
     sharedStyles,
     css`
@@ -46,13 +54,7 @@ export class CpEmailPreview extends LitElement {
     `,
   ];
 
-  constructor() {
-    super();
-    this._outstanding = createDocs().filter((d) => d.status !== STATUS.APPROVED);
-    this._expiry = createLinkExpiry();
-  }
-
-  _open(e) {
+  private _open(e: Event): void {
     e.preventDefault();
     this.dispatchEvent(new CustomEvent('open-portal', { bubbles: true, composed: true }));
   }
@@ -61,27 +63,41 @@ export class CpEmailPreview extends LitElement {
     return html`
       <div class="wrap">
         <p class="caption-top body-md">${icon('mail', 16)}Step 1 of 2 · Example email your customer receives</p>
+        ${this._email()}
+      </div>`;
+  }
+
+  private _email() {
+    const d = this.data;
+    if (this.phase === 'loading') return html`<cp-loading layout="email"></cp-loading>`;
+    if (this.phase === 'error' || !d) return html`<div class="card"><cp-state-screen variant="error"></cp-state-screen></div>`;
+    const { customer, request, link } = d;
+    const outstanding = d.documents.filter((x) => x.status !== STATUS.APPROVED);
+    return html`
         <article class="email" aria-label="Example email">
           <dl class="meta body-md">
             <div><dt>From</dt><dd>no-reply@ig-transfers.example</dd></div>
             <div><dt>To</dt><dd>${customer.email}</dd></div>
-            <div><dt>Subject</dt><dd class="subject">Action needed: documents for your ${customer.process} request</dd></div>
+            <div><dt>Subject</dt><dd class="subject">Action needed: documents for your ${request.process} request</dd></div>
           </dl>
           <div class="band"><img class="logo" src=${logoUrl} width="125" height="32" alt="Innovation Group" /></div>
           <div class="body body-lg">
             <p>Dear ${customer.name.split(' ')[0]},</p>
-            <p>To keep your <strong>${customer.process}</strong> request moving (reference <strong>${customer.reference}</strong>), we still need these documents from you:</p>
-            <ul>${this._outstanding.map((d) => html`<li>${d.name}</li>`)}</ul>
+            <p>To keep your <strong>${request.process}</strong> request moving (reference <strong>${request.reference}</strong>), we still need these documents from you:</p>
+            <ul>${outstanding.map((d) => html`<li>${d.name}</li>`)}</ul>
             <p>You can upload them securely using the button below. You don’t need to log in.</p>
             <a class="btn btn-primary cta" href="#/portal" @click=${this._open}>Upload my documents</a>
-            <p class="notice body-md">${icon('clock', 16)}<span>This link is just for you and expires on <strong>${formatDate(this._expiry)}</strong>. Please don’t forward this email.</span></p>
+            <p class="notice body-md">${icon('clock', 16)}<span>This link is just for you and expires on <strong>${formatDate(link.expiresAt)}</strong>. Please don’t forward this email.</span></p>
             <div>
               <p class="token-label caption">Your secure link (for reference)</p>
-              <div class="token" aria-label="Signed link preview">${SIGNED_LINK}</div>
+              <div class="token" aria-label="Signed link preview">${link.signedUrl}</div>
             </div>
           </div>
-        </article>
-      </div>`;
+        </article>`;
   }
 }
-customElements.define('cp-email-preview', CpEmailPreview);
+declare global {
+  interface HTMLElementTagNameMap {
+    'cp-email-preview': CpEmailPreview;
+  }
+}

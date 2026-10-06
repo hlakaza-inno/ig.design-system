@@ -1,9 +1,13 @@
 import { LitElement, html, css } from 'lit';
+import { customElement, property, state } from 'lit/decorators.js';
 import { sharedStyles } from '../styles/shared.js';
-import { icon } from '../lib/icons.js';
-import { customer, support } from '../data/mock.js';
+import { icon, type IconName } from '../lib/icons.js';
+import { requestNewLink } from '../lib/api.js';
+import type { SupportContact } from '../lib/types.js';
 
-const COPY = {
+type Tone = 'warning' | 'error' | 'success';
+type Variant = 'expired' | 'tampered' | 'complete' | 'error';
+const COPY: Record<Variant, { icon: IconName; tone: Tone; title: string; body: string }> = {
   expired: {
     icon: 'clock',
     tone: 'warning',
@@ -20,21 +24,32 @@ const COPY = {
     icon: 'check-circle',
     tone: 'success',
     title: 'All documents approved',
-    body: 'Thank you, Thandi. We’ve received and approved everything we asked for. You don’t need to do anything else.',
+    body: 'We’ve received and approved everything we asked for. You don’t need to do anything else.',
+  },
+  error: {
+    icon: 'alert-circle',
+    tone: 'error',
+    title: 'We couldn’t load your documents',
+    body: 'Something went wrong on our side. Check your connection and try again.',
   },
 };
 
 /**
  * Full-card terminal states.
- * Props:  variant 'expired' | 'tampered' | 'complete'
- * Events: request-new-link (expired only)
+ * Props:  variant 'expired' | 'tampered' | 'complete' | 'error'
+ *         maskedEmail   shown after a new link is requested (expired)
+ *         support       contact details (tampered)
+ *         customerName  personalises the complete message
+ * Events: request-new-link (expired), retry (error)
  */
+@customElement('cp-state-screen')
 export class CpStateScreen extends LitElement {
-  static properties = {
-    variant: { type: String },
-    _sending: { state: true },
-    _sent: { state: true },
-  };
+  @property() variant: Variant = 'expired';
+  @property() maskedEmail = '';
+  @property({ attribute: false }) support: SupportContact | null = null;
+  @property() customerName = '';
+  @state() private _sending = false;
+  @state() private _sent = false;
 
   static styles = [
     sharedStyles,
@@ -69,52 +84,55 @@ export class CpStateScreen extends LitElement {
     `,
   ];
 
-  constructor() {
-    super();
-    this.variant = 'expired';
-    this._sending = false;
-    this._sent = false;
-  }
-
-  async _requestLink() {
+  private async _requestLink(): Promise<void> {
     this._sending = true;
-    // Mocked: pretend the API call takes a moment, then confirm.
-    await new Promise((r) => setTimeout(r, 900));
+    await requestNewLink();
     this._sending = false;
     this._sent = true;
     this.dispatchEvent(new CustomEvent('request-new-link', { bubbles: true, composed: true }));
   }
 
-  _action() {
+  private _action() {
     if (this.variant === 'expired') {
       return this._sent
         ? html`<div class="alert alert-success" role="status">
             ${icon('check-circle', 20)}
-            <div>We’ve emailed a new link to <strong>${customer.maskedEmail}</strong>. It can take a few minutes to arrive — check your spam folder too.</div>
+            <div>We’ve emailed a new link to <strong>${this.maskedEmail}</strong>. It can take a few minutes to arrive — check your spam folder too.</div>
           </div>`
         : html`<button class="btn btn-primary" ?disabled=${this._sending} @click=${this._requestLink}>
             ${icon('mail', 18)}${this._sending ? 'Sending…' : 'Email me a new link'}
           </button>`;
     }
-    if (this.variant === 'tampered') {
+    if (this.variant === 'tampered' && this.support) {
+      const { email, phone } = this.support;
       return html`<div class="support body-md">
         <span class="muted">Still stuck? Our support team can help.</span>
-        <a href="mailto:${support.email}">${icon('mail', 18)}${support.email}</a>
-        <a href="tel:${support.phone.replace(/\s/g, '')}">${icon('phone', 18)}${support.phone}</a>
+        <a href="mailto:${email}">${icon('mail', 18)}${email}</a>
+        <a href="tel:${phone.replace(/\s/g, '')}">${icon('phone', 18)}${phone}</a>
       </div>`;
+    }
+    if (this.variant === 'error') {
+      return html`<button class="btn btn-primary"
+        @click=${() => this.dispatchEvent(new CustomEvent('retry', { bubbles: true, composed: true }))}>Try again</button>`;
     }
     return '';
   }
 
   render() {
     const c = COPY[this.variant] ?? COPY.tampered;
+    const first = this.customerName.split(' ')[0];
+    const body = this.variant === 'complete' && first ? `Thank you, ${first}. ${c.body}` : c.body;
     return html`
       <section class="state" aria-labelledby="title">
         <div class="badge-icon tone-${c.tone}">${icon(c.icon, 32)}</div>
         <h2 id="title">${c.title}</h2>
-        <p class="lead body-lg">${c.body}</p>
+        <p class="lead body-lg">${body}</p>
         ${this._action()}
       </section>`;
   }
 }
-customElements.define('cp-state-screen', CpStateScreen);
+declare global {
+  interface HTMLElementTagNameMap {
+    'cp-state-screen': CpStateScreen;
+  }
+}

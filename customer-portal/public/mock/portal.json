@@ -1,0 +1,69 @@
+{
+  "request": {
+    "process": "Transfer of Ownership",
+    "reference": "TOO-2026-004812"
+  },
+  "customer": {
+    "name": "Thandi Nkosi",
+    "email": "thandi.nkosi@example.com",
+    "maskedEmail": "t•••••@example.com"
+  },
+  "support": {
+    "email": "support@ig-transfers.example",
+    "phone": "0800 000 123"
+  },
+  "link": {
+    "expiresInDays": 7,
+    "signedUrl": "https://portal.ig-transfers.example/documents/upload?t=eyJwaSI6IjNmMmEuLi4iLCJlbSI6IjliN2MuLi4iLCJleHAiOjE3NTE...&sig=Qm9ldGllLXNpZ25hdHVyZQ"
+  },
+  "documents": [
+    {
+      "id": 1,
+      "name": "Certified ID Copy",
+      "description": "Certified within the last 3 months",
+      "status": "Requested",
+      "fileName": null,
+      "fileSize": null,
+      "mimeType": null,
+      "blobUrl": null,
+      "submissions": 0,
+      "rejectionReason": null
+    },
+    {
+      "id": 2,
+      "name": "Proof of Address",
+      "description": "Not older than 3 months",
+      "status": "Submitted",
+      "fileName": "utility-bill.pdf",
+      "fileSize": 482000,
+      "mimeType": "application/pdf",
+      "blobUrl": null,
+      "submissions": 1,
+      "rejectionReason": null
+    },
+    {
+      "id": 3,
+      "name": "Signed Transfer Form",
+      "description": "Signed by both seller and buyer",
+      "status": "Rejected",
+      "fileName": null,
+      "fileSize": null,
+      "mimeType": null,
+      "blobUrl": null,
+      "submissions": 1,
+      "rejectionReason": "Document is illegible"
+    },
+    {
+      "id": 4,
+      "name": "Vehicle Registration (NaTIS)",
+      "description": "Latest registration certificate",
+      "status": "Approved",
+      "fileName": "natis.jpg",
+      "fileSize": 910000,
+      "mimeType": "image/jpeg",
+      "blobUrl": null,
+      "submissions": 1,
+      "rejectionReason": null
+    }
+  ]
+}

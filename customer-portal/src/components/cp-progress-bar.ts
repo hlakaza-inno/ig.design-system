@@ -1,14 +1,15 @@
 import { LitElement, html, css } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
 import { sharedStyles } from '../styles/shared.js';
 
 /** Accessible progress indicator. Used for "X of Y approved" and per-file uploads. */
+@customElement('cp-progress-bar')
 export class CpProgressBar extends LitElement {
-  static properties = {
-    value: { type: Number },
-    max: { type: Number },
-    label: { type: String },
-    tone: { type: String }, // 'primary' (default) | 'success'
-  };
+  @property({ type: Number }) value = 0;
+  @property({ type: Number }) max = 100;
+  @property() label = '';
+  /** 'primary' (default) | 'success' */
+  @property() tone: 'primary' | 'success' = 'primary';
 
   static styles = [
     sharedStyles,
@@ -31,14 +32,6 @@ export class CpProgressBar extends LitElement {
     `,
   ];
 
-  constructor() {
-    super();
-    this.value = 0;
-    this.max = 100;
-    this.label = '';
-    this.tone = 'primary';
-  }
-
   render() {
     const pct = this.max > 0 ? Math.min(100, Math.max(0, (this.value / this.max) * 100)) : 0;
     return html`
@@ -57,4 +50,8 @@ export class CpProgressBar extends LitElement {
     `;
   }
 }
-customElements.define('cp-progress-bar', CpProgressBar);
+declare global {
+  interface HTMLElementTagNameMap {
+    'cp-progress-bar': CpProgressBar;
+  }
+}

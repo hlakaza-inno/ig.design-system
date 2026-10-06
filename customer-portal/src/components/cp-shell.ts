@@ -1,29 +1,47 @@
 import { LitElement, html, css } from 'lit';
-import { keyed } from 'lit/directives/keyed.js';
+import { customElement, state } from 'lit/decorators.js';
+import type { LoadPhase, PortalResponse, Scenario } from '../lib/types.js';
 import { sharedStyles } from '../styles/shared.js';
 import { icon } from '../lib/icons.js';
-import { SCENARIOS } from '../data/mock.js';
+import { SCENARIOS, fetchPortal } from '../lib/api.js';
 import './cp-email-preview.js';
 import './cp-portal.js';
 
-const SCENARIO_LABEL = { valid: 'Valid link', expired: 'Expired token', tampered: 'Invalid / tampered' };
+const SCENARIO_LABEL: Record<Scenario, string> = { valid: 'Valid link', expired: 'Expired token', tampered: 'Invalid / tampered' };
 
-const readScenario = () => {
+const readScenario = (): Scenario => {
   const s = new URLSearchParams(location.search).get('scenario');
-  return SCENARIOS.includes(s) ? s : 'valid';
+  return SCENARIOS.find((x) => x === s) ?? 'valid';
 };
-const readView = () => (location.hash.startsWith('#/portal') ? 'portal' : 'email');
+const readView = (): 'email' | 'portal' => (location.hash.startsWith('#/portal') ? 'portal' : 'email');
 
 /**
  * App shell / router. Hash routes: `#/` (email) and `#/portal`.
  * Demo scenario via `?scenario=valid|expired|tampered`.
+ * Owns loading: the email example always loads a valid link; the portal loads
+ * with the chosen scenario, as the real link click would.
  */
+@customElement('cp-shell')
 export class CpShell extends LitElement {
-  static properties = {
-    _view: { state: true },
-    _scenario: { state: true },
-    _runId: { state: true },
-    _panelOpen: { state: true },
+  @state() private _view: 'email' | 'portal' = readView();
+  @state() private _scenario: Scenario = readScenario();
+  @state() private _phase: LoadPhase = 'loading';
+  @state() private _response: PortalResponse | null = null;
+  private _abort?: AbortController;
+  @state() private _panelOpen = false;
+
+  private readonly _sync = (): void => {
+    const view = readView();
+    const scenario = readScenario();
+    if (view === this._view && scenario === this._scenario) return;
+    this._view = view;
+    this._scenario = scenario;
+    void this._load();
+  };
+
+  private readonly _onDocClick = (e: MouseEvent): void => {
+    const demo = this.renderRoot.querySelector('.demo');
+    if (this._panelOpen && demo && !e.composedPath().includes(demo)) this._panelOpen = false;
   };
 
   static styles = [
@@ -55,59 +73,65 @@ export class CpShell extends LitElement {
     `,
   ];
 
-  constructor() {
-    super();
-    this._view = readView();
-    this._scenario = readScenario();
-    this._runId = 0;
-    this._panelOpen = false;
-    this._onDocClick = (e) => {
-      if (this._panelOpen && !e.composedPath().includes(this.renderRoot.querySelector('.demo'))) this._panelOpen = false;
-    };
-    this._sync = () => {
-      this._view = readView();
-      this._scenario = readScenario();
-    };
-  }
-
-  connectedCallback() {
+  connectedCallback(): void {
     super.connectedCallback();
     window.addEventListener('hashchange', this._sync);
     window.addEventListener('popstate', this._sync);
     document.addEventListener('click', this._onDocClick);
+    void this._load();
   }
 
-  disconnectedCallback() {
+  disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener('hashchange', this._sync);
     window.removeEventListener('popstate', this._sync);
     document.removeEventListener('click', this._onDocClick);
+    this._abort?.abort();
   }
 
-  _go(view) {
+  /** Fetch from the mocked API; a newer request cancels the one in flight. */
+  private async _load(fail = false): Promise<void> {
+    this._abort?.abort();
+    const ctrl = new AbortController();
+    this._abort = ctrl;
+    this._phase = 'loading';
+    this._response = null;
+    try {
+      const scenario = this._view === 'portal' ? this._scenario : 'valid';
+      this._response = await fetchPortal({ scenario, fail, signal: ctrl.signal });
+      this._phase = 'ready';
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') return;
+      this._phase = 'error';
+    }
+  }
+
+  private _go(view: 'email' | 'portal'): void {
     location.hash = view === 'portal' ? '#/portal' : '#/';
   }
 
-  _setScenario(e) {
+  private _setScenario(e: Event): void {
+    const value = (e.target as HTMLSelectElement).value as Scenario;
     const url = new URL(location.href);
-    if (e.target.value === 'valid') url.searchParams.delete('scenario');
-    else url.searchParams.set('scenario', e.target.value);
+    if (value === 'valid') url.searchParams.delete('scenario');
+    else url.searchParams.set('scenario', value);
     history.replaceState(null, '', url);
-    this._scenario = e.target.value;
+    this._scenario = value;
+    void this._load();
   }
 
-  _reset() {
-    this._runId += 1; // remount portal with fresh mock data
+  private _reset(): void {
+    void this._load(); // fresh mock data; the portal resets its working copy
   }
 
-  _approveAll() {
+  private _approveAll(): void {
     this.renderRoot.querySelector('cp-portal')?.approveAll();
   }
 
   render() {
     const inPortal = this._view === 'portal';
     return html`
-      <div class="demo body-md" @keydown=${(e) => e.key === 'Escape' && (this._panelOpen = false)}>
+      <div class="demo body-md" @keydown=${(e: KeyboardEvent) => e.key === 'Escape' && (this._panelOpen = false)}>
         ${this._panelOpen
           ? html`<div class="panel" id="demo-panel" role="group" aria-labelledby="demo-title">
               <h2 id="demo-title">Demo settings</h2>
@@ -119,14 +143,23 @@ export class CpShell extends LitElement {
               <button class="btn btn-secondary" @click=${() => this._go(inPortal ? 'email' : 'portal')}>${inPortal ? '← Back to email' : 'Skip to portal →'}</button>
               ${inPortal ? html`<button class="btn btn-secondary" @click=${this._approveAll}>Approve all documents</button>` : ''}
               <button class="btn btn-secondary" @click=${this._reset}>Reset demo</button>
+              <button class="btn btn-secondary" @click=${() => void this._load(true)}>Simulate load error</button>
             </div>`
           : ''}
         <button class="cog" aria-label="Demo settings" aria-expanded=${this._panelOpen} aria-controls="demo-panel"
           @click=${() => (this._panelOpen = !this._panelOpen)}>${icon('settings', 22)}</button>
       </div>
       ${inPortal
-        ? keyed(this._runId, html`<cp-portal .scenario=${this._scenario}></cp-portal>`)
-        : html`<cp-email-preview @open-portal=${() => this._go('portal')}></cp-email-preview>`}`;
+        ? html`<cp-portal .phase=${this._phase} .response=${this._response}
+            @retry=${() => void this._load()}></cp-portal>`
+        : html`<cp-email-preview .phase=${this._phase}
+            .data=${this._response?.status === 'valid' ? this._response.data : null}
+            @open-portal=${() => this._go('portal')}
+            @retry=${() => void this._load()}></cp-email-preview>`}`;
   }
 }
-customElements.define('cp-shell', CpShell);
+declare global {
+  interface HTMLElementTagNameMap {
+    'cp-shell': CpShell;
+  }
+}

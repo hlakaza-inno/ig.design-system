@@ -1,4 +1,6 @@
-import { LitElement, html, css, nothing } from 'lit';
+import { LitElement, html, css, nothing, type PropertyValues } from 'lit';
+import { customElement, property } from 'lit/decorators.js';
+import type { DocumentItem } from '../lib/types.js';
 import { sharedStyles } from '../styles/shared.js';
 import { icon } from '../lib/icons.js';
 import { formatSize } from '../lib/rules.js';
@@ -9,11 +11,10 @@ import { formatSize } from '../lib/rules.js';
  * Events: close-preview, download-file { id }
  * Real preview for files uploaded in this session (blobUrl); a placeholder page for seeded mock files.
  */
+@customElement('cp-preview-modal')
 export class CpPreviewModal extends LitElement {
-  static properties = {
-    open: { type: Boolean, reflect: true },
-    doc: { type: Object },
-  };
+  @property({ type: Boolean, reflect: true }) open = false;
+  @property({ type: Object }) doc: DocumentItem | null = null;
 
   static styles = [
     sharedStyles,
@@ -75,24 +76,19 @@ export class CpPreviewModal extends LitElement {
     `,
   ];
 
-  constructor() {
-    super();
-    this.open = false;
-    this.doc = null;
-  }
-
-  updated(changed) {
+  protected updated(changed: PropertyValues<this>): void {
     if (!changed.has('open')) return;
     const dlg = this.renderRoot.querySelector('dialog');
+    if (!dlg) return;
     if (this.open && !dlg.open) dlg.showModal();
     else if (!this.open && dlg.open) dlg.close();
   }
 
-  _close() {
+  private _close(): void {
     this.dispatchEvent(new CustomEvent('close-preview', { bubbles: true, composed: true }));
   }
 
-  _body(d) {
+  private _body(d: DocumentItem) {
     if (d.blobUrl && d.mimeType?.startsWith('image/')) {
       return html`<img src=${d.blobUrl} alt="Preview of ${d.fileName}" />`;
     }
@@ -110,14 +106,14 @@ export class CpPreviewModal extends LitElement {
     const d = this.doc;
     return html`
       <dialog aria-labelledby="title" @close=${this._close} @cancel=${this._close}
-        @click=${(e) => e.target === e.currentTarget && this._close()}>
+        @click=${(e: Event) => e.target === e.currentTarget && this._close()}>
         ${d
           ? html`
               <div class="head">
                 <h2 class="heading-lg" id="title">${d.name}</h2>
                 <button class="x" aria-label="Close preview" @click=${this._close}>${icon('x', 20)}</button>
               </div>
-              <p class="meta body-md">${d.fileName} · ${formatSize(d.fileSize)} · Submission ${d.submissions}</p>
+              <p class="meta body-md">${d.fileName} · ${formatSize(d.fileSize ?? 0)} · Submission ${d.submissions}</p>
               <div class="preview">${this._body(d)}</div>
               <div class="foot">
                 <button class="btn btn-secondary"
@@ -130,4 +126,8 @@ export class CpPreviewModal extends LitElement {
       </dialog>`;
   }
 }
-customElements.define('cp-preview-modal', CpPreviewModal);
+declare global {
+  interface HTMLElementTagNameMap {
+    'cp-preview-modal': CpPreviewModal;
+  }
+}
