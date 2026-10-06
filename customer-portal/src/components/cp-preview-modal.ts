@@ -20,16 +20,19 @@ export class CpPreviewModal extends LitElement {
     sharedStyles,
     css`
       dialog {
-        width: min(560px, calc(100vw - var(--ig-space-6)));
-        max-height: calc(100dvh - var(--ig-space-6));
+        width: min(1000px, calc(100vw - var(--ig-space-6)));
+        height: min(900px, calc(100dvh - var(--ig-space-6)));
         padding: 0;
         border: 0;
         border-radius: var(--ig-radius-xl);
         box-shadow: var(--ig-shadow-xl);
         color: var(--ig-color-neutral-900);
-        overflow: auto;
+        overflow: hidden;
       }
+      /* Flex column only while open: display on a closed <dialog> would show it. */
+      dialog[open] { display: flex; flex-direction: column; }
       dialog::backdrop { background: rgba(0, 10, 46, 0.55); }
+      .head, .meta, .foot { flex: none; }
       .head {
         display: flex;
         justify-content: space-between;
@@ -49,7 +52,8 @@ export class CpPreviewModal extends LitElement {
       .meta { padding: var(--ig-space-1) var(--ig-space-5) 0; color: var(--ig-color-neutral-600); }
       .preview {
         margin: var(--ig-space-4) var(--ig-space-5);
-        height: 280px;
+        flex: 1;
+        min-height: 0;
         background: var(--ig-color-neutral-100);
         border: 1px solid var(--ig-color-neutral-200);
         border-radius: var(--ig-radius-lg);
@@ -60,7 +64,7 @@ export class CpPreviewModal extends LitElement {
       .preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
       .preview iframe { width: 100%; height: 100%; border: 0; background: #fff; }
       .sheet {
-        width: 150px; height: 200px; background: #fff; border-radius: var(--ig-radius-sm);
+        width: 240px; height: 320px; background: #fff; border-radius: var(--ig-radius-sm);
         box-shadow: var(--ig-shadow-md); padding: var(--ig-space-4);
         display: flex; flex-direction: column; gap: var(--ig-space-2);
       }
@@ -73,6 +77,27 @@ export class CpPreviewModal extends LitElement {
         display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--ig-space-2);
         padding: 0 var(--ig-space-5) var(--ig-space-5);
       }
+      /* Phones: a full-screen sheet that starts below the page header (kept visible);
+         the header, file details and buttons stay put and only the preview scrolls. */
+      @media (max-width: 639px) {
+        dialog {
+          position: fixed;
+          inset: var(--cp-modal-top, 0px) 0 0 0;
+          margin: 0;
+          width: 100%;
+          max-width: 100%;
+          height: auto;
+          max-height: none;
+          border-radius: var(--ig-radius-xl) var(--ig-radius-xl) 0 0;
+        }
+        dialog::backdrop { background: transparent; }
+        .preview { margin: var(--ig-space-3) var(--ig-space-4); overflow: auto; place-items: start center; }
+        .preview img { max-height: none; }
+        .head { padding: var(--ig-space-4) var(--ig-space-4) 0; }
+        .meta { padding: var(--ig-space-1) var(--ig-space-4) 0; }
+        .foot { padding: 0 var(--ig-space-4) var(--ig-space-4); }
+        .foot .btn { flex: 1 1 auto; }
+      }
     `,
   ];
 
@@ -80,7 +105,13 @@ export class CpPreviewModal extends LitElement {
     if (!changed.has('open')) return;
     const dlg = this.renderRoot.querySelector('dialog');
     if (!dlg) return;
-    if (this.open && !dlg.open) dlg.showModal();
+    if (this.open && !dlg.open) {
+      // Leave the portal's brand header visible above the full-screen sheet on phones.
+      const header = (this.getRootNode() as ShadowRoot).querySelector?.('cp-brand-header');
+      const top = Math.max(0, Math.round(header?.getBoundingClientRect().bottom ?? 0));
+      dlg.style.setProperty('--cp-modal-top', `${top}px`);
+      dlg.showModal();
+    }
     else if (!this.open && dlg.open) dlg.close();
   }
 

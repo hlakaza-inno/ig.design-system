@@ -11,6 +11,8 @@ export class CpBrandHeader extends LitElement {
     sharedStyles,
     css`
       :host { display: block; background: var(--ig-color-neutral-0); border-bottom: 1px solid var(--ig-color-neutral-200); }
+      /* Phones: pinned to the top so the brand and secure-link cue are always in view. */
+      @media (max-width: 639px) { :host { position: sticky; top: 0; z-index: 5; } }
       .inner {
         max-width: 1200px;
         margin: 0 auto;
