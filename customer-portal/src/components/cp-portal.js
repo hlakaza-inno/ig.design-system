@@ -65,13 +65,7 @@ export class CpPortal extends LitElement {
         .brand-inner, main { padding-left: var(--ig-space-8); padding-right: var(--ig-space-8); }
       }
 
-      /* Mobile: one column. Desktop: sticky summary sidebar + document list. */
-      .layout { display: flex; flex-direction: column; gap: var(--ig-space-4); }
-      .side, .list { display: flex; flex-direction: column; gap: var(--ig-space-4); min-width: 0; }
-      @media (min-width: 960px) {
-        .layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: var(--ig-space-8); align-items: start; }
-        .side { position: sticky; top: var(--ig-space-6); }
-      }
+      main { display: flex; flex-direction: column; gap: var(--ig-space-4); }
       .state-wrap { max-width: 640px; width: 100%; margin: var(--ig-space-6) auto 0; }
 
       h1 { font-family: var(--ig-font-family-display); font-size: var(--ig-text-2xl); line-height: var(--ig-leading-2xl); font-weight: 600; }
@@ -86,11 +80,15 @@ export class CpPortal extends LitElement {
         grid-template-columns: 1fr 1fr;
         gap: var(--ig-space-3) var(--ig-space-4);
       }
+      @media (min-width: 720px) { dl.ref { grid-template-columns: repeat(4, 1fr); } }
       dl.ref dt { color: var(--ig-color-neutral-600); }
       dl.ref dd { margin: 0; font-weight: 600; color: var(--ig-color-primary-700); }
 
       .progress-wrap { padding: 0 var(--ig-space-1); }
-      .docs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--ig-space-3); }
+      .docs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--ig-space-4); }
+      @media (min-width: 960px) { .docs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      .docs li { display: flex; }
+      .docs cp-doc-card { flex: 1; min-width: 0; }
       .state-card { padding: 0; }
       footer.help { text-align: center; color: var(--ig-color-neutral-500); }
     `,
@@ -211,7 +209,6 @@ export class CpPortal extends LitElement {
     const approved = this._docs.filter((d) => d.status === STATUS.APPROVED).length;
     const rejected = this._docs.filter((d) => d.status === STATUS.REJECTED).length;
     return html`
-      <div class="layout"><div class="side">
       <div class="intro">
         <h1>Upload your documents</h1>
         <p class="body-lg">Hi ${customer.name.split(' ')[0]}, we need a few documents to continue your request.</p>
@@ -236,9 +233,7 @@ export class CpPortal extends LitElement {
         <cp-progress-bar .value=${approved} .max=${total}
           label="${approved} of ${total} documents approved"></cp-progress-bar>
       </div>
-      </div>
 
-      <div class="list">
       <ul class="docs" aria-label="Documents to upload">
         ${repeat(byPriority(this._docs), (d) => d.id, (d) => html`
           <li>
@@ -252,8 +247,7 @@ export class CpPortal extends LitElement {
           </li>`)}
       </ul>
 
-      <footer class="help body-md">Accepted: PDF, JPG or PNG, up to 5 MB each. One file per document.</footer>
-      </div></div>`;
+      <footer class="help body-md">Accepted: PDF, JPG or PNG, up to 5 MB each. One file per document.</footer>`;
   }
 
   render() {
