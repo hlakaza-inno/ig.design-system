@@ -8,8 +8,7 @@ import { css } from 'lit';
  * Deliberate tweaks (portal is customer-facing, mobile-first):
  *  - `.btn` has a 44px minimum height for touch targets.
  *  - Focus ring uses primary-500: accent cyan is invisible on white.
- *  - `.pill-*` use the soft pairings from the spec's contrast table
- *    (e.g. success-700 on success-50) because solid success-500 + white text fails AA.
+ *  - Status pills pair solid badge colours with text that passes AA (see `.pill-*`).
  */
 export const sharedStyles = css`
   *,
@@ -120,22 +119,24 @@ export const sharedStyles = css`
   .alert-info { background: var(--ig-color-primary-50); color: var(--ig-color-primary-700); border-left-color: var(--ig-color-primary-500); }
   .alert-warning { background: var(--ig-color-warning-50); color: var(--ig-color-neutral-800); border-left-color: var(--ig-color-warning-500); }
 
-  /* Status pills (badge shape, soft AA-safe colours) */
+  /* Status pills (badge shape), weighted by urgency for the customer:
+     Rejected = badge-error (fix now), Requested = badge-warning (to do),
+     Submitted = soft primary (we're reviewing, nothing to do), Approved = badge-primary (done). */
   .pill {
     display: inline-flex;
     align-items: center;
-    gap: var(--ig-space-1);
-    padding: 2px var(--ig-space-2);
+    gap: var(--ig-space-2);
+    padding: var(--ig-space-2) var(--ig-space-3);
     border-radius: var(--ig-radius-full);
-    font-size: var(--ig-text-xs);
-    line-height: var(--ig-leading-xs);
+    font-size: var(--ig-text-sm);
+    line-height: var(--ig-leading-sm);
     font-weight: 500;
     white-space: nowrap;
   }
-  .pill-requested { background: var(--ig-color-neutral-100); color: var(--ig-color-neutral-700); }
+  .pill-rejected { background: var(--ig-color-error-500); color: #fff; }
+  .pill-requested { background: var(--ig-color-warning-500); color: var(--ig-color-neutral-900); }
   .pill-submitted { background: var(--ig-color-primary-50); color: var(--ig-color-primary-700); }
-  .pill-approved { background: var(--ig-color-success-50); color: var(--ig-color-success-700); }
-  .pill-rejected { background: var(--ig-color-error-50); color: var(--ig-color-error-700); }
+  .pill-approved { background: var(--ig-color-primary-500); color: #fff; }
 
   /* Card */
   .card {

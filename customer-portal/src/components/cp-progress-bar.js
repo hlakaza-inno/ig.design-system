@@ -7,7 +7,7 @@ export class CpProgressBar extends LitElement {
     value: { type: Number },
     max: { type: Number },
     label: { type: String },
-    tone: { type: String }, // 'success' | 'primary'
+    tone: { type: String }, // 'primary' (default) | 'success'
   };
 
   static styles = [
@@ -23,10 +23,10 @@ export class CpProgressBar extends LitElement {
       .fill {
         height: 100%;
         border-radius: var(--ig-radius-full);
-        background: var(--ig-color-success-500);
+        background: var(--ig-color-primary-500);
         transition: width var(--ig-duration-slow) var(--ig-easing-default);
       }
-      .tone-primary .fill { background: var(--ig-color-primary-500); }
+      .tone-success .fill { background: var(--ig-color-success-500); }
       .label { margin-top: var(--ig-space-1); color: var(--ig-color-neutral-600); }
     `,
   ];
@@ -36,7 +36,7 @@ export class CpProgressBar extends LitElement {
     this.value = 0;
     this.max = 100;
     this.label = '';
-    this.tone = 'success';
+    this.tone = 'primary';
   }
 
   render() {
