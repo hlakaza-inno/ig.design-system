@@ -1,0 +1,136 @@
+// ─── Innovation Group Design System — Typography ─────────────────────
+// Font-face declarations and semantic type scale classes.
+
+// ─── Neue Haas Unica (Adobe TypeKit) ─────────────────────
+// Kit ID: qqq6ejd — Weights: 300 (light), 400 (regular), 500 (medium), 600 (semibold)
+@import url('https://p.typekit.net/p.css?s=1&k=qqq6ejd&ht=tk&f=39512.39519.39521.39523&a=9841214&app=typekit&e=css');
+
+@font-face {
+  font-family: 'neue-haas-unica';
+  src: url('https://use.typekit.net/af/6a58f8/00000000000000003b9b2058/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n6&v=3') format('woff2'),
+       url('https://use.typekit.net/af/6a58f8/00000000000000003b9b2058/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n6&v=3') format('woff'),
+       url('https://use.typekit.net/af/6a58f8/00000000000000003b9b2058/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n6&v=3') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 600;
+  ascent-override: 85%;
+  descent-override: 15%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'neue-haas-unica';
+  src: url('https://use.typekit.net/af/fff0e7/00000000000000003b9b205f/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n3&v=3') format('woff2'),
+       url('https://use.typekit.net/af/fff0e7/00000000000000003b9b205f/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n3&v=3') format('woff'),
+       url('https://use.typekit.net/af/fff0e7/00000000000000003b9b205f/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n3&v=3') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 300;
+  ascent-override: 85%;
+  descent-override: 15%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'neue-haas-unica';
+  src: url('https://use.typekit.net/af/dff101/00000000000000003b9b2061/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n5&v=3') format('woff2'),
+       url('https://use.typekit.net/af/dff101/00000000000000003b9b2061/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n5&v=3') format('woff'),
+       url('https://use.typekit.net/af/dff101/00000000000000003b9b2061/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n5&v=3') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 500;
+  ascent-override: 85%;
+  descent-override: 15%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'neue-haas-unica';
+  src: url('https://use.typekit.net/af/3da9bf/00000000000000003b9b2063/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3') format('woff2'),
+       url('https://use.typekit.net/af/3da9bf/00000000000000003b9b2063/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3') format('woff'),
+       url('https://use.typekit.net/af/3da9bf/00000000000000003b9b2063/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n4&v=3') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+  ascent-override: 85%;
+  descent-override: 15%;
+  line-gap-override: 0%;
+}
+
+// ─── Prota Pro (self-hosted, regular weight only) ────────
+// The font is extracted from the base64 in portal-login.html.
+// Place prota-pro-regular.ttf in each app's public/fonts/ directory.
+@font-face {
+  font-family: 'prota_proregular';
+  src: url('/fonts/prota-pro-regular.ttf') format('truetype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: normal;
+  ascent-override: 84%;
+  descent-override: 16%;
+  line-gap-override: 0%;
+}
+
+// ─── Semantic Type Scale Classes ─────────────────────────
+// Use these classes for consistent typography across MFEs.
+// All values flow from tokens/typography.ts → preset.ts → @apply.
+//
+// line-height: 1 is intentional on all heading/display classes:
+// Custom fonts (Prota Pro, Neue Haas Unica) have tall ascender metrics that
+// shift the visual text centre above the mathematical midpoint of the line box.
+// Without line-height: 1, flex items-center alignment with icons is broken.
+
+.display-xl {
+  @apply font-display text-4xl font-bold;
+  line-height: 1;
+}
+
+.display-lg {
+  @apply font-display text-3xl font-bold;
+  line-height: 1;
+}
+
+.display-md {
+  @apply font-display text-2xl font-semibold;
+  line-height: 1;
+}
+
+.heading-lg {
+  @apply font-display text-xl font-semibold;
+  line-height: 1;
+}
+
+.heading-md {
+  @apply font-display text-lg font-semibold;
+  line-height: 1;
+}
+
+.heading-sm {
+  @apply font-display text-base font-semibold;
+  line-height: 1;
+}
+
+.body-lg {
+  @apply font-body text-base font-normal;
+  line-height: 1.5;
+}
+
+.body-md {
+  @apply font-body text-sm font-normal;
+  line-height: 1.5;
+}
+
+.body-sm {
+  @apply font-body text-xs font-normal;
+  line-height: 1.5;
+}
+
+.label {
+  @apply font-body text-sm font-medium;
+  line-height: 1;
+}
+
+.caption {
+  @apply font-body text-xs font-normal;
+  line-height: 1;
+}

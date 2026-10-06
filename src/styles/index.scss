@@ -1,0 +1,8 @@
+// ─── Innovation Group Design System — Main Entry Point ───────────────
+// Import order: reset → typography → utilities → components
+// All values flow from tokens/*.ts → tailwind preset → @apply directives.
+
+@forward 'reset';
+@forward 'typography';
+@forward 'utilities';
+@forward 'components';

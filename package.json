@@ -1,0 +1,41 @@
+{
+  "name": "@ig/design-system",
+  "version": "1.1.1",
+  "description": "Innovation Group Design System — tokens, Tailwind preset, PrimeNG theme, SCSS",
+  "license": "MIT",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./tailwind/preset": {
+      "types": "./src/tailwind/preset.d.ts",
+      "require": "./cjs/tailwind/preset.js",
+      "import": "./src/tailwind/preset.js",
+      "default": "./src/tailwind/preset.js"
+    },
+    "./primeng/ig-preset": {
+      "types": "./src/primeng/ig-preset.d.ts",
+      "import": "./src/primeng/ig-preset.js",
+      "default": "./src/primeng/ig-preset.js"
+    },
+    "./styles": "./src/styles/index.scss",
+    "./styles/*": "./src/styles/*.scss"
+  },
+  "typesVersions": {
+    "*": {
+      "primeng/ig-preset": ["./src/primeng/ig-preset.d.ts"],
+      "tailwind/preset": ["./src/tailwind/preset.d.ts"]
+    }
+  },
+  "publishConfig": {
+    "registry": "https://pkgs.dev.azure.com/innovation-group/IG.ZA/_packaging/IGZA-Packages/npm/registry/"
+  },
+  "peerDependencies": {
+    "tailwindcss": ">=3.0.0"
+  },
+  "sideEffects": false
+}

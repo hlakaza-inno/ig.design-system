@@ -1,0 +1,50 @@
+// ─── Innovation Group Design System — Utility Classes ────────────────
+// Semantic utility classes built on Tailwind via @apply.
+// Single source of truth: tokens/*.ts → preset.ts → here.
+
+// ─── Text Colors ─────────────────────────────────────────
+.text-primary { @apply text-neutral-900; }
+.text-secondary { @apply text-neutral-500; }
+.text-inverse { @apply text-white; }
+.text-brand { @apply text-primary-500; }
+.text-link { @apply text-primary-500; }
+.text-link:hover { @apply text-primary-600; }
+.text-error { @apply text-error-500; }
+.text-warning { @apply text-warning-500; }
+.text-success { @apply text-success-500; }
+
+// ─── Background Colors ──────────────────────────────────
+.bg-brand { @apply bg-primary-500; }
+.bg-accent { @apply bg-accent-500; }
+.bg-surface { @apply bg-neutral-50; }
+.bg-surface-secondary { @apply bg-neutral-100; }
+.bg-error { @apply bg-error-50; }
+.bg-warning { @apply bg-warning-50; }
+.bg-success { @apply bg-success-50; }
+
+// ─── Border Colors ───────────────────────────────────────
+.border-default { @apply border-neutral-200; }
+.border-strong { @apply border-neutral-400; }
+.border-brand { @apply border-primary-500; }
+.border-error { @apply border-error-500; }
+
+// ─── Code blocks ─────────────────────────────────────────
+pre {
+  @apply bg-neutral-700 rounded-sm text-neutral-200 font-mono overflow-x-auto;
+  padding: 0.5rem 0.75rem;
+}
+
+code {
+  @apply font-mono text-sm;
+}
+
+.p-select-label {
+  line-height: 1 !important;
+}
+.p-datepicker {
+  @apply w-full
+}
+.l-height-1 { line-height: 1 !important; }
+.p-inputtext {
+    padding-top: 15px !important;
+}

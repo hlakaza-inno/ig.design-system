@@ -1,0 +1,59 @@
+{
+  "name": "design-system",
+  "root": "libs/design-system",
+  "sourceRoot": "libs/design-system/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:design-system"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/design-system",
+        "tsConfig": "libs/design-system/tsconfig.lib.json",
+        "main": "libs/design-system/src/index.ts",
+        "assets": [
+          {
+            "input": "libs/design-system/src/styles",
+            "glob": "**/*.scss",
+            "output": "styles"
+          },
+          {
+            "input": "libs/design-system",
+            "glob": "package.json",
+            "output": "."
+          },
+          {
+            "input": "libs/design-system",
+            "glob": "DESIGN-SYSTEM-SPEC.md",
+            "output": "."
+          },
+          {
+            "input": "libs/design-system",
+            "glob": "PUBLISHING.md",
+            "output": "."
+          },
+          {
+            "input": ".",
+            "glob": ".npmrc",
+            "output": "."
+          }
+        ]
+      }
+    },
+    "build-cjs": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "tsc -p libs/design-system/tsconfig.lib.cjs.json"
+      }
+    },
+    "publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm publish dist/libs/design-system --access restricted"
+      },
+      "dependsOn": ["build-cjs"]
+    }
+  }
+}

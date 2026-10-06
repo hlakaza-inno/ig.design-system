@@ -1,0 +1,226 @@
+// ─── Innovation Group Design System — Component Styles ───────────────
+// Reusable component classes built on Tailwind utilities via @apply.
+// Single source of truth: all values flow from tokens/*.ts → preset.ts → here.
+
+// ═══════════════════════════════════════════════════════════
+// BUTTONS
+// ═══════════════════════════════════════════════════════════
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 py-2 px-4 font-body text-sm font-medium leading-5 rounded-md cursor-pointer border-2 border-transparent transition-all duration-normal;
+
+  &:focus-visible {
+    @apply outline-2 outline-accent-500 outline-offset-2;
+  }
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    @apply cursor-not-allowed opacity-60;
+  }
+}
+
+.btn-primary {
+  @extend .btn;
+  @apply bg-primary-500 text-white border-primary-500 shadow-xs;
+
+  &:hover:not(:disabled) {
+    @apply bg-transparent text-primary-500 border-primary-500 shadow-none;
+  }
+
+  &:active:not(:disabled) {
+    @apply bg-primary-700 text-white border-primary-700;
+  }
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    @apply bg-neutral-200 text-neutral-400 border-neutral-200 shadow-none;
+  }
+}
+
+.btn-secondary {
+  @extend .btn;
+  @apply bg-transparent text-primary-500 border-primary-500;
+
+  &:hover:not(:disabled) {
+    @apply bg-primary-500 text-white border-primary-500;
+  }
+
+  &:active:not(:disabled) {
+    @apply bg-primary-700 text-white border-primary-700;
+  }
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    @apply text-neutral-400 border-neutral-300 bg-transparent;
+  }
+}
+
+// ─── PrimeNG Button overrides ───────────────────────────────────────
+// PrimeNG Aura has no button border-width token — CSS override required.
+// !important needed because PrimeNG uses the border shorthand which resets border-width.
+.p-button {
+  border-width: 2px !important;
+}
+
+// PrimeNG's disabledOpacity token only controls opacity — it cannot
+// change background/border/text colors. CSS override is required.
+
+// Primary (default) — filled neutral when disabled
+.p-button:not(.p-button-secondary):disabled,
+.p-button:not(.p-button-secondary)[disabled],
+.p-button:not(.p-button-secondary).p-disabled {
+  @apply bg-neutral-200 text-neutral-400 border-neutral-200 shadow-none cursor-not-allowed;
+  opacity: 1 !important;
+  pointer-events: auto;
+
+  .p-button-icon {
+    @apply text-neutral-400;
+  }
+}
+
+// Secondary — stays transparent when disabled
+.p-button.p-button-secondary:disabled,
+.p-button.p-button-secondary[disabled],
+.p-button.p-button-secondary.p-disabled {
+  @apply bg-transparent text-neutral-400 border-neutral-300 shadow-none cursor-not-allowed;
+  opacity: 1 !important;
+  pointer-events: auto; // PrimeNG sets pointer-events:none on .p-disabled which hides the cursor
+
+  .p-button-icon {
+    @apply text-neutral-400; // PrimeNG may set icon color via its own CSS variable — force override
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// CARDS
+// ═══════════════════════════════════════════════════════════
+
+.card {
+  @apply bg-white border border-neutral-200 rounded-md shadow-xs overflow-hidden transition-shadow duration-normal;
+
+  &--interactive:hover {
+    @apply shadow-sm;
+  }
+}
+
+.card-header {
+  @apply p-4 border-b border-neutral-200 text-lg font-semibold leading-7 heading-sm;
+}
+
+.card-content {
+  @apply p-4;
+}
+
+.card-footer {
+  @apply p-4 border-t border-neutral-200;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════════════════════
+
+.alert {
+  @apply flex items-start gap-3 py-3 px-4 rounded-md border-l-4 font-body text-sm leading-5;
+}
+
+.alert-error {
+  @extend .alert;
+  @apply bg-error-50 text-error-700;
+  border-left-color: theme('colors.error.500');
+}
+
+.alert-warning {
+  @extend .alert;
+  @apply bg-warning-50 text-neutral-800;
+  border-left-color: theme('colors.warning.500');
+}
+
+.alert-success {
+  @extend .alert;
+  @apply bg-success-50 text-neutral-800;
+  border-left-color: theme('colors.success.500');
+}
+
+.alert-info {
+  @extend .alert;
+  @apply bg-primary-50 text-primary-700;
+  border-left-color: theme('colors.primary.500');
+}
+
+// ═══════════════════════════════════════════════════════════
+// BADGES
+// ═══════════════════════════════════════════════════════════
+
+.badge {
+  @apply inline-flex items-center px-2 rounded-full font-body text-xs font-medium leading-4 whitespace-nowrap;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.badge-primary {
+  @extend .badge;
+  @apply bg-primary-500 text-white;
+}
+
+.badge-success {
+  @extend .badge;
+  @apply bg-success-500 text-white;
+}
+
+.badge-warning {
+  @extend .badge;
+  @apply bg-warning-500 text-neutral-900;
+}
+
+.badge-error {
+  @extend .badge;
+  @apply bg-error-500 text-white;
+}
+
+.badge-neutral {
+  @extend .badge;
+  @apply bg-neutral-200 text-neutral-700;
+}
+
+// ═══════════════════════════════════════════════════════════
+// LAYOUT CONTAINERS
+// ═══════════════════════════════════════════════════════════
+
+.page-container {
+  @apply max-w-[1200px] mx-auto px-6 w-full;
+}
+
+.section-container {
+  @apply py-8;
+
+  & + & {
+    @apply border-t border-neutral-200;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PRIMENG TYPOGRAPHY OVERRIDES
+// Font sizes and weights are controlled via ig-preset.ts component tokens.
+// Base font (neue-haas-unica) is inherited from body { @apply font-body } in _reset.scss.
+// Only font-family (Prota Pro) and line-height cannot be set via PrimeNG preset tokens.
+// ═══════════════════════════════════════════════════════════
+
+.p-dialog-title,
+.p-drawer-header,
+.p-drawer-title,
+.p-panel-title,
+.p-card-title,
+.p-accordionheader,
+.p-fieldset-legend-label {
+  @apply font-display;
+  line-height: 1;
+}
+
+  .p-datepicker {
+    width: 100%;
+  }
+  
+
+  .p-dialog-title{
+    @apply font-semibold heading-md;
+  }

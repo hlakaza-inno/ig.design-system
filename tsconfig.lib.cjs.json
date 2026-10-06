@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/libs/design-system/cjs",
+    "rootDir": "src",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": [
+    "src/tailwind/**/*.ts",
+    "src/tokens/**/*.ts"
+  ]
+}
+
